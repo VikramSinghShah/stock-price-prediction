@@ -8,15 +8,22 @@ import plotly.express as px
 
 st.set_page_config(page_title="Stock Price Prediction", layout="wide")
 
-# ✅ Background image styling
+# ✅ Background image styling with dark overlay
 st.markdown(
     """
     <style>
     .stApp {
-        background-image: url("https://github.com/VikramSinghShah/stock-price-prediction/blob/main/background.jpg");
+        background-image: url("https://raw.githubusercontent.com/VikramSinghShah/stock-price-prediction/main/background.jpg");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
+    }
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(0,0,0,0.5); /* dark overlay */
+        z-index: -1;
     }
     .main-title {font-size: 42px; font-weight: bold; color: #FFFFFF; text-align: center; margin-bottom: 25px;}
     .card {background-color: rgba(244,246,247,0.9); padding: 25px; border-radius: 12px; text-align: center; margin: 10px; box-shadow: 2px 2px 8px rgba(0,0,0,0.3);}
@@ -78,9 +85,9 @@ if run_prediction:
         prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
 
         col1, col2, col3 = st.columns(3)
-        col1.markdown(f"<div class='card'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
-        col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
-        col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>How well the model fits</p><h2>{r2:.3f}</h2></div>", unsafe_allow_html=True)
+        col1.markdown(f"<div class='card' title='Previous day closing price'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
+        col2.markdown(f"<div class='card' title='Green = profit, Red = loss'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
+        col3.markdown(f"<div class='card' title='R² shows how well the model fits'><h2>Model Accuracy (R²)</h2><p>Performance Metric</p><h2>{r2:.3f}</h2></div>", unsafe_allow_html=True)
 
         export_df = pd.DataFrame({"Date":[prev_date,next_date],"Close":[prev_close,next_day],"Change%":[0,change]})
         st.download_button("📥 Download Predictions (CSV)", export_df.to_csv(index=False).encode("utf-8"), "predictions.csv", "text/csv")
@@ -108,20 +115,21 @@ if run_comparison:
             st.dataframe(styled_df, use_container_width=True)
 
         if display_mode in ["Charts Only","Table + Charts"]:
-            df_melt = comp_df.melt(id_vars="Ticker", value_vars=["Prev Close","Predicted Close"], var_name="Type", value_name="Price")
-            fig1 = px.bar(df_melt, x="Ticker", y="Price", color="Type", barmode="group",
-                          title="Predicted vs Previous Close",
-                          labels={"Price":"Price","Ticker":"Stock"},
-                          hover_data={"Price":True,"Type":True})
-            st.plotly_chart(fig1, use_container_width=True)
+            with st.expander("📊 See Interactive Charts"):
+                df_melt = comp_df.melt(id_vars="Ticker", value_vars=["Prev Close","Predicted Close"], var_name="Type", value_name="Price")
+                fig1 = px.bar(df_melt, x="Ticker", y="Price", color="Type", barmode="group",
+                              title="Predicted vs Previous Close",
+                              labels={"Price":"Price","Ticker":"Stock"},
+                              hover_data={"Price":True,"Type":True})
+                st.plotly_chart(fig1, use_container_width=True)
 
-            fig2 = px.bar(comp_df, x="Ticker", y="Change%", color="Change%",
-                          title="Predicted Percentage Change",
-                          labels={"Change%":"% Change","Ticker":"Stock"},
-                          color_continuous_scale=["red","green"],
-                          hover_data={"Change%":True,"R²":True})
-            st.plotly_chart(fig2, use_container_width=True)
+                fig2 = px.bar(comp_df, x="Ticker", y="Change%", color="Change%",
+                              title="Predicted Percentage Change",
+                              labels={"Change%":"% Change","Ticker":"Stock"},
+                              color_continuous_scale=["red","green"],
+                              hover_data={"Change%":True,"R²":True})
+                st.plotly_chart(fig2, use_container_width=True)
 
-            st.markdown("<p style='text-align:center; font-size:16px;'>🟢 Profit | 🔴 Loss | R² = Model Accuracy</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align:center; font-size:16px;'>🟢 Profit | 🔴 Loss | R² = Model Accuracy</p>", unsafe_allow_html=True)
 
         st.download_button("📥 Download Comparison (CSV)", comp_df.to_csv(index=False).encode("utf-8"), "comparison.csv", "text/csv")
