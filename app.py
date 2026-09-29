@@ -83,8 +83,8 @@ if run_prediction:
 
         # Previous and next day info
         prev_date = data.index[-1].strftime("%Y-%m-%d")
-        prev_close = data['Close'].iloc[-1].item()   # ✅ safe scalar extraction
-        next_day = model.predict([X.iloc[-1].values])[0].item()  # ✅ safe scalar extraction
+        prev_close = data['Close'].iloc[-1].item()
+        next_day = model.predict([X.iloc[-1].values])[0].item()
         next_date = (data.index[-1] + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
         change = ((next_day - prev_close) / prev_close) * 100
 
@@ -116,8 +116,9 @@ if run_prediction:
             </div>
         """, unsafe_allow_html=True)
 
-        # Interactive chart
-        fig = px.line(data, x=data.index, y=["Close","MA10","MA20"],
-                      labels={"value":"Price","index":"Date"},
+        # ✅ Fix Plotly chart error by resetting index
+        data_reset = data.reset_index()
+        fig = px.line(data_reset, x="Date", y=["Close","MA10","MA20"],
+                      labels={"value":"Price","Date":"Date"},
                       title=f"{ticker} Stock Price & Moving Averages")
         st.plotly_chart(fig, use_container_width=True)
