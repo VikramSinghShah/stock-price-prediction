@@ -37,4 +37,5 @@ if st.button("Predict"):
     "Predicted": y_pred.ravel()
 })
     next_day = model.predict([X.iloc[-1].values])[0]
+    next_day = float(next_day)
     st.success(f"Predicted Next Day Closing Price for {ticker}: ${next_day:.2f}")
