@@ -68,9 +68,14 @@ if st.sidebar.button("Run Prediction"):
         # Previous and next day info
         prev_date = data.index[-1].strftime("%Y-%m-%d")
         prev_close = data['Close'].iloc[-1]
-        next_day = float(model.predict([X.iloc[-1].values])[0])
+        # Predict next day
+        next_day = model.predict([X.iloc[-1].values])[0]
+
+        # Safely convert to Python float
+        next_day = next_day.item()   # ✅ clean fix
+
         next_date = (data.index[-1] + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
-        change = ((next_day - prev_close) / prev_close) * 100
+        st.success(f"Predicted Next Day Closing Price for {ticker} ({next_date}): ${next_day:.2f}")
 
         # Styled metrics
         col1, col2, col3 = st.columns(3)
