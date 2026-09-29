@@ -8,18 +8,27 @@ import plotly.express as px
 
 st.set_page_config(page_title="Stock Price Prediction", layout="wide")
 
-# Custom CSS styling
-st.markdown("""
+# ✅ Background image styling
+st.markdown(
+    """
     <style>
-    .main-title {font-size: 42px; font-weight: bold; color: #2E86C1; text-align: center; margin-bottom: 25px;}
-    .card {background-color: #F4F6F7; padding: 25px; border-radius: 12px; text-align: center; margin: 10px; box-shadow: 2px 2px 8px rgba(0,0,0,0.1);}
+    .stApp {
+        background-image: url("https://raw.githubusercontent.com/<your-username>/<your-repo>/main/background.jpg");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+    .main-title {font-size: 42px; font-weight: bold; color: #FFFFFF; text-align: center; margin-bottom: 25px;}
+    .card {background-color: rgba(244,246,247,0.9); padding: 25px; border-radius: 12px; text-align: center; margin: 10px; box-shadow: 2px 2px 8px rgba(0,0,0,0.3);}
     .card h2 {margin: 0; font-size: 32px; color: #1B4F72;}
     .card p {margin: 8px 0; font-size: 18px; color: #7D3C98;}
     .positive {color: green; font-weight: bold; font-size: 32px;}
     .negative {color: red; font-weight: bold; font-size: 32px;}
-    .section-title {text-align: center; font-size: 30px; font-weight: bold; margin-top: 30px; margin-bottom: 20px;}
+    .section-title {text-align: center; font-size: 30px; font-weight: bold; margin-top: 30px; margin-bottom: 20px; color:#FFFFFF;}
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown('<div class="main-title">📈 Advanced Stock Price Prediction Dashboard</div>', unsafe_allow_html=True)
 
@@ -29,11 +38,8 @@ ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL")
 period = st.sidebar.selectbox("Data Period", ["1y", "2y", "5y"], index=1)
 run_prediction = st.sidebar.button("Run Prediction")
 
-# Multi-ticker comparison
 multi_tickers = st.sidebar.multiselect("Compare Multiple Tickers", ["AAPL","TSLA","MSFT"], default=["AAPL","TSLA","MSFT"])
 run_comparison = st.sidebar.button("Run Comparison")
-
-# Toggle for display mode
 display_mode = st.sidebar.radio("Show in Comparison", ["Table Only","Charts Only","Table + Charts"], index=2)
 
 def get_stock_data(ticker, period):
@@ -71,18 +77,12 @@ if run_prediction:
     else:
         prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
 
-        # Styled cards with color-coded predicted close
         col1, col2, col3 = st.columns(3)
         col1.markdown(f"<div class='card'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
         col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
         col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>How well the model fits</p><h2>{r2:.3f}</h2></div>", unsafe_allow_html=True)
 
-        # ✅ Download button
-        export_df = pd.DataFrame({
-            "Date":[prev_date,next_date],
-            "Close":[prev_close,next_day],
-            "Change%":[0,change]
-        })
+        export_df = pd.DataFrame({"Date":[prev_date,next_date],"Close":[prev_close,next_day],"Change%":[0,change]})
         st.download_button("📥 Download Predictions (CSV)", export_df.to_csv(index=False).encode("utf-8"), "predictions.csv", "text/csv")
 
 # Multi-ticker comparison
@@ -96,11 +96,8 @@ if run_comparison:
 
     if results:
         comp_df = pd.DataFrame(results, columns=["Ticker","Prev Date","Prev Close","Next Date","Predicted Close","Change%","R²"])
-
-        # Centered bold heading
         st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison</div>", unsafe_allow_html=True)
 
-        # ✅ Color-coded Predicted Close column
         def highlight_pred(row):
             return ['color: green; font-weight:bold;' if row["Predicted Close"] > row["Prev Close"] and col=="Predicted Close"
                     else 'color: red; font-weight:bold;' if row["Predicted Close"] < row["Prev Close"] and col=="Predicted Close"
@@ -111,16 +108,13 @@ if run_comparison:
             st.dataframe(styled_df, use_container_width=True)
 
         if display_mode in ["Charts Only","Table + Charts"]:
-            # Interactive bar chart for predicted vs previous close
-            df_melt = comp_df.melt(id_vars="Ticker", value_vars=["Prev Close","Predicted Close"],
-                                   var_name="Type", value_name="Price")
+            df_melt = comp_df.melt(id_vars="Ticker", value_vars=["Prev Close","Predicted Close"], var_name="Type", value_name="Price")
             fig1 = px.bar(df_melt, x="Ticker", y="Price", color="Type", barmode="group",
                           title="Predicted vs Previous Close",
                           labels={"Price":"Price","Ticker":"Stock"},
                           hover_data={"Price":True,"Type":True})
             st.plotly_chart(fig1, use_container_width=True)
 
-            # Interactive bar chart for percentage change
             fig2 = px.bar(comp_df, x="Ticker", y="Change%", color="Change%",
                           title="Predicted Percentage Change",
                           labels={"Change%":"% Change","Ticker":"Stock"},
@@ -128,8 +122,6 @@ if run_comparison:
                           hover_data={"Change%":True,"R²":True})
             st.plotly_chart(fig2, use_container_width=True)
 
-            # ✅ Legend/explanation
-            st.markdown("<p style='text-align:center; font-size:16px;'>Green = Profit, Red = Loss. Hover over bars for details. R² shows how well the model fits the data.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align:center; font-size:16px;'>🟢 Profit | 🔴 Loss | R² = Model Accuracy</p>", unsafe_allow_html=True)
 
-        # ✅ Download comparison
         st.download_button("📥 Download Comparison (CSV)", comp_df.to_csv(index=False).encode("utf-8"), "comparison.csv", "text/csv")
