@@ -13,7 +13,7 @@ st.markdown(
     """
     <style>
     .stApp {
-        background-image: url("https://raw.githubusercontent.com/<your-username>/<your-repo>/main/background.jpg");
+        background-image: url("https://github.com/VikramSinghShah/stock-price-prediction/blob/main/background.jpg");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
