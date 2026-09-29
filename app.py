@@ -71,7 +71,7 @@ if run_prediction:
         col1, col2, col3 = st.columns(3)
         col1.markdown(f"<div class='card'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
         col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
-        col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>Performance Metric</p><h2>{r2:.3f}</h2></div>", unsafe_allow_html=True)
+        col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>How well the model fits</p><h2>{r2:.3f}</h2></div>", unsafe_allow_html=True)
 
         # ✅ Download button
         export_df = pd.DataFrame({
@@ -98,13 +98,17 @@ if run_comparison:
 
         # Interactive bar chart for predicted vs previous close
         fig1 = px.bar(comp_df, x="Ticker", y=["Prev Close","Predicted Close"], barmode="group",
-                      title="Predicted vs Previous Close", labels={"value":"Price","Ticker":"Stock"})
+                      title="Predicted vs Previous Close",
+                      labels={"value":"Price","Ticker":"Stock"},
+                      hover_data={"Prev Close":True,"Predicted Close":True})
         st.plotly_chart(fig1, use_container_width=True)
 
         # Interactive bar chart for percentage change
         fig2 = px.bar(comp_df, x="Ticker", y="Change%", color="Change%",
-                      title="Predicted Percentage Change", labels={"Change%":"% Change","Ticker":"Stock"},
-                      color_continuous_scale=["red","green"])
+                      title="Predicted Percentage Change",
+                      labels={"Change%":"% Change","Ticker":"Stock"},
+                      color_continuous_scale=["red","green"],
+                      hover_data={"Change%":True,"R²":True})
         st.plotly_chart(fig2, use_container_width=True)
 
         # ✅ Download comparison
