@@ -6,9 +6,10 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 import plotly.express as px
 
+# Page setup
 st.set_page_config(page_title="Stock Price Prediction", layout="wide")
 
-# Custom CSS for styling
+# Custom CSS styling
 st.markdown("""
     <style>
     .main-title {
@@ -18,17 +19,31 @@ st.markdown("""
         text-align: center;
         margin-bottom: 20px;
     }
-    .metric-box {
+    .card {
         background-color: #F4F6F7;
-        padding: 15px;
-        border-radius: 10px;
+        padding: 20px;
+        border-radius: 12px;
         text-align: center;
         margin: 10px;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
     }
-    .date-label {
+    .card h2 {
+        margin: 0;
+        font-size: 28px;
+        color: #1B4F72;
+    }
+    .card p {
+        margin: 5px 0;
         font-size: 14px;
         color: #7D3C98;
+    }
+    .positive {
+        color: green;
+        font-weight: bold;
+    }
+    .negative {
+        color: red;
+        font-weight: bold;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -68,43 +83,10 @@ if st.sidebar.button("Run Prediction"):
         # Previous and next day info
         prev_date = data.index[-1].strftime("%Y-%m-%d")
         prev_close = data['Close'].iloc[-1]
-        # Predict next day
-        next_day = model.predict([X.iloc[-1].values])[0]
-
-        # Safely convert to Python float
-        next_day = next_day.item()   # ✅ clean fix
-
+        next_day = model.predict([X.iloc[-1].values])[0].item()  # ✅ safe scalar conversion
         next_date = (data.index[-1] + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
-        st.success(f"Predicted Next Day Closing Price for {ticker} ({next_date}): ${next_day:.2f}")
+        change = ((next_day - prev_close) / prev_close) * 100
 
-        # Styled metrics
+        # Display results in styled cards
         col1, col2, col3 = st.columns(3)
-        col1.markdown(f"""
-            <div class="metric-box">
-                <h4>Previous Close</h4>
-                <p class="date-label">{prev_date}</p>
-                <h2>${prev_close:.2f}</h2>
-            </div>
-        """, unsafe_allow_html=True)
 
-        col2.markdown(f"""
-            <div class="metric-box">
-                <h4>Predicted Next Close</h4>
-                <p class="date-label">{next_date}</p>
-                <h2>${next_day:.2f}</h2>
-                <p style="color:{'green' if change>0 else 'red'};">{change:.2f}%</p>
-            </div>
-        """, unsafe_allow_html=True)
-
-        col3.markdown(f"""
-            <div class="metric-box">
-                <h4>Model R² Score</h4>
-                <h2>{model.score(X_test, y_test):.3f}</h2>
-            </div>
-        """, unsafe_allow_html=True)
-
-        # Interactive chart
-        fig = px.line(data, x=data.index, y=["Close","MA10","MA20"],
-                      labels={"value":"Price","index":"Date"},
-                      title=f"{ticker} Stock Price & Moving Averages")
-        st.plotly_chart(fig, use_container_width=True)
