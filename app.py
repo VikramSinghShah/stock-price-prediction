@@ -62,7 +62,7 @@ def get_stock_data(ticker, period):
         data['Prev_Close'] = data['Close'].shift(1)
         data['MA10'] = data['Close'].rolling(10).mean()
         data['MA20'] = data['Close'].rolling(20).mean()
-        data = data.dropna()   # ✅ drop NaN rows so Plotly doesn’t error
+        data = data.dropna()
         return data
     except Exception:
         return None
@@ -116,13 +116,17 @@ if run_prediction:
             </div>
         """, unsafe_allow_html=True)
 
-        # ✅ Fix Plotly chart error
+        # ✅ Fix Plotly chart error using long-form melt
         data_reset = data.reset_index()
+        data_melt = data_reset.melt(id_vars=["Date"], value_vars=["Close","MA10","MA20"],
+                                    var_name="Metric", value_name="Price")
+
         fig = px.line(
-            data_reset,
+            data_melt,
             x="Date",
-            y=["Close","MA10","MA20"],   # ✅ wide-form works now
-            labels={"value":"Price","Date":"Date"},
+            y="Price",
+            color="Metric",
+            labels={"Price":"Price","Date":"Date"},
             title=f"{ticker} Stock Price & Moving Averages"
         )
         st.plotly_chart(fig, use_container_width=True)
