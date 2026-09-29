@@ -32,7 +32,9 @@ if st.button("Predict"):
 
     st.write("R² Score:", model.score(X_test, y_test))
 
-    st.line_chart(pd.DataFrame({"Actual": y_test.values, "Predicted": y_pred}, index=y_test.index))
-
+    results = pd.DataFrame({
+    "Actual": y_test.to_numpy().ravel(),
+    "Predicted": y_pred.ravel()
+})
     next_day = model.predict([X.iloc[-1].values])[0]
     st.success(f"Predicted Next Day Closing Price for {ticker}: ${next_day:.2f}")
