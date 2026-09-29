@@ -1,9 +1,9 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import numpy as np   # ✅ Needed for .item()
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
 
 st.title("📈 Stock Price Prediction (Linear Regression)")
 
@@ -33,9 +33,18 @@ if st.button("Predict"):
     st.write("R² Score:", model.score(X_test, y_test))
 
     results = pd.DataFrame({
-    "Actual": y_test.to_numpy().ravel(),
-    "Predicted": y_pred.ravel()
-})
+        "Actual": y_test.to_numpy().ravel(),
+        "Predicted": y_pred.ravel()
+    })
+
+    # ✅ Predict next day
     next_day = model.predict([X.iloc[-1].values])[0]
-    next_day = float(next_day)
+
+    # ✅ Safely convert to Python float
+    if isinstance(next_day, (np.ndarray, list)):
+        next_day = next_day.item()
+    else:
+        next_day = float(next_day)
+
+    # ✅ Correct indentation: st.success must be outside the else block
     st.success(f"Predicted Next Day Closing Price for {ticker}: ${next_day:.2f}")
