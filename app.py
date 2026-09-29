@@ -6,54 +6,13 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 import plotly.express as px
 
-# Page setup
 st.set_page_config(page_title="Stock Price Prediction", layout="wide")
-
-# Custom CSS styling
-st.markdown("""
-    <style>
-    .main-title {
-        font-size: 36px;
-        font-weight: bold;
-        color: #2E86C1;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    .card {
-        background-color: #F4F6F7;
-        padding: 20px;
-        border-radius: 12px;
-        text-align: center;
-        margin: 10px;
-        box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-    }
-    .card h2 {
-        margin: 0;
-        font-size: 28px;
-        color: #1B4F72;
-    }
-    .card p {
-        margin: 5px 0;
-        font-size: 14px;
-        color: #7D3C98;
-    }
-    .positive {
-        color: green;
-        font-weight: bold;
-    }
-    .negative {
-        color: red;
-        font-weight: bold;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="main-title">📈 Advanced Stock Price Prediction Dashboard</div>', unsafe_allow_html=True)
 
 # Sidebar controls
 st.sidebar.header("⚙️ Settings")
 ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL")
 period = st.sidebar.selectbox("Data Period", ["1y", "2y", "5y"], index=1)
+run_prediction = st.sidebar.button("Run Prediction")   # ✅ store button state
 
 def get_stock_data(ticker, period):
     try:
@@ -66,7 +25,7 @@ def get_stock_data(ticker, period):
     except Exception:
         return None
 
-if st.sidebar.button("Run Prediction"):
+if run_prediction:   # ✅ check button state
     data = get_stock_data(ticker, period)
 
     if data is None or data.empty:
@@ -83,10 +42,18 @@ if st.sidebar.button("Run Prediction"):
         # Previous and next day info
         prev_date = data.index[-1].strftime("%Y-%m-%d")
         prev_close = data['Close'].iloc[-1]
-        next_day = model.predict([X.iloc[-1].values])[0].item()  # ✅ safe scalar conversion
+        next_day = model.predict([X.iloc[-1].values])[0].item()
         next_date = (data.index[-1] + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
         change = ((next_day - prev_close) / prev_close) * 100
 
-        # Display results in styled cards
+        # Styled cards
         col1, col2, col3 = st.columns(3)
+        col1.success(f"Previous Close ({prev_date}): ${prev_close:.2f}")
+        col2.success(f"Predicted Next Close ({next_date}): ${next_day:.2f} ({change:.2f}%)")
+        col3.info(f"Model R² Score: {model.score(X_test, y_test):.3f}")
 
+        # Interactive chart
+        fig = px.line(data, x=data.index, y=["Close","MA10","MA20"],
+                      labels={"value":"Price","index":"Date"},
+                      title=f"{ticker} Stock Price & Moving Averages")
+        st.plotly_chart(fig, use_container_width=True)
