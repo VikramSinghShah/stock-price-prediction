@@ -83,8 +83,8 @@ if run_prediction:
 
         # Previous and next day info
         prev_date = data.index[-1].strftime("%Y-%m-%d")
-        prev_close = float(data['Close'].iloc[-1])   # ✅ ensure Python float
-        next_day = model.predict([X.iloc[-1].values])[0].item()  # ✅ safe scalar conversion
+        prev_close = data['Close'].iloc[-1].item()   # ✅ safe scalar extraction
+        next_day = model.predict([X.iloc[-1].values])[0].item()  # ✅ safe scalar extraction
         next_date = (data.index[-1] + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
         change = ((next_day - prev_close) / prev_close) * 100
 
