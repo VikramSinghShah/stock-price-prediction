@@ -4,18 +4,20 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
+import plotly.express as px
 
 st.set_page_config(page_title="Stock Price Prediction", layout="wide")
 
 # Custom CSS styling
 st.markdown("""
     <style>
-    .main-title {font-size: 40px; font-weight: bold; color: #2E86C1; text-align: center; margin-bottom: 25px;}
+    .main-title {font-size: 42px; font-weight: bold; color: #2E86C1; text-align: center; margin-bottom: 25px;}
     .card {background-color: #F4F6F7; padding: 25px; border-radius: 12px; text-align: center; margin: 10px; box-shadow: 2px 2px 8px rgba(0,0,0,0.1);}
     .card h2 {margin: 0; font-size: 32px; color: #1B4F72;}
     .card p {margin: 8px 0; font-size: 18px; color: #7D3C98;}
-    .positive {color: green; font-weight: bold; font-size: 28px;}
-    .negative {color: red; font-weight: bold; font-size: 28px;}
+    .positive {color: green; font-weight: bold; font-size: 32px;}
+    .negative {color: red; font-weight: bold; font-size: 32px;}
+    .section-title {text-align: center; font-size: 30px; font-weight: bold; margin-top: 30px; margin-bottom: 20px;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -69,7 +71,7 @@ if run_prediction:
         col1, col2, col3 = st.columns(3)
         col1.markdown(f"<div class='card'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
         col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
-        col3.markdown(f"<div class='card'><h2>Model R² Score</h2><p>Performance Metric</p><h2>{r2:.3f}</h2></div>", unsafe_allow_html=True)
+        col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>Performance Metric</p><h2>{r2:.3f}</h2></div>", unsafe_allow_html=True)
 
         # ✅ Download button
         export_df = pd.DataFrame({
@@ -89,12 +91,21 @@ if run_comparison:
 
     if results:
         comp_df = pd.DataFrame(results, columns=["Ticker","Prev Date","Prev Close","Next Date","Predicted Close","Change%","R²"])
-        st.subheader("📊 Multi‑Ticker Comparison")
+        
+        # Centered bold heading
+        st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison</div>", unsafe_allow_html=True)
         st.dataframe(comp_df)
 
-        # ✅ Bar chart visualization
-        st.bar_chart(comp_df.set_index("Ticker")[["Predicted Close","Prev Close"]])
+        # Interactive bar chart for predicted vs previous close
+        fig1 = px.bar(comp_df, x="Ticker", y=["Prev Close","Predicted Close"], barmode="group",
+                      title="Predicted vs Previous Close", labels={"value":"Price","Ticker":"Stock"})
+        st.plotly_chart(fig1, use_container_width=True)
+
+        # Interactive bar chart for percentage change
+        fig2 = px.bar(comp_df, x="Ticker", y="Change%", color="Change%",
+                      title="Predicted Percentage Change", labels={"Change%":"% Change","Ticker":"Stock"},
+                      color_continuous_scale=["red","green"])
+        st.plotly_chart(fig2, use_container_width=True)
 
         # ✅ Download comparison
         st.download_button("📥 Download Comparison (CSV)", comp_df.to_csv(index=False).encode("utf-8"), "comparison.csv", "text/csv")
-
