@@ -116,10 +116,16 @@ if run_prediction:
             </div>
         """, unsafe_allow_html=True)
 
-        # ✅ Fix Plotly chart error using long-form melt
+        # ✅ Fix Plotly chart error using melt with renamed Date column
         data_reset = data.reset_index()
-        data_melt = data_reset.melt(id_vars=["Date"], value_vars=["Close","MA10","MA20"],
-                                    var_name="Metric", value_name="Price")
+        data_reset.rename(columns={data_reset.columns[0]: "Date"}, inplace=True)
+
+        data_melt = data_reset.melt(
+            id_vars=["Date"],
+            value_vars=["Close","MA10","MA20"],
+            var_name="Metric",
+            value_name="Price"
+        )
 
         fig = px.line(
             data_melt,
