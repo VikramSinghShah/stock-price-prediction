@@ -65,13 +65,21 @@ if run_prediction:
         col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2>${next_day:.2f}</h2><p class='{ 'positive' if change>0 else 'negative' }'>{change:.2f}%</p></div>", unsafe_allow_html=True)
         col3.markdown(f"<div class='card'><h2>Model R² Score</h2><p>Performance Metric</p><h2>{model.score(X_test, y_test):.3f}</h2></div>", unsafe_allow_html=True)
 
-        # ✅ Fix Plotly chart error
+        # ✅ Robust fix for Plotly chart
         data_reset = data.reset_index()
-        if "Date" not in data_reset.columns:
-            data_reset.rename(columns={data_reset.columns[0]: "Date"}, inplace=True)
 
+        # Auto-detect datetime column
+        date_col = None
+        for col in data_reset.columns:
+            if pd.api.types.is_datetime64_any_dtype(data_reset[col]):
+                date_col = col
+                break
+        if date_col is None:
+            date_col = data_reset.columns[0]  # fallback
+
+        # Melt into long-form
         data_melt = data_reset.melt(
-            id_vars=["Date"],
+            id_vars=[date_col],
             value_vars=["Close","MA10","MA20"],
             var_name="Metric",
             value_name="Price"
@@ -79,10 +87,10 @@ if run_prediction:
 
         fig = px.line(
             data_melt,
-            x="Date",
+            x=date_col,
             y="Price",
             color="Metric",
-            labels={"Price":"Price","Date":"Date"},
+            labels={"Price":"Price", date_col:"Date"},
             title=f"{ticker} Stock Price & Moving Averages"
         )
         st.plotly_chart(fig, use_container_width=True)
