@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
-import plotly.express as px
 
 st.set_page_config(page_title="Stock Price Prediction", layout="wide")
 
@@ -28,6 +27,10 @@ ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL")
 period = st.sidebar.selectbox("Data Period", ["1y", "2y", "5y"], index=1)
 run_prediction = st.sidebar.button("Run Prediction")
 
+# Multi-ticker comparison
+multi_tickers = st.sidebar.multiselect("Compare Multiple Tickers", ["AAPL","TSLA","MSFT"], default=["AAPL","TSLA","MSFT"])
+run_comparison = st.sidebar.button("Run Comparison")
+
 def get_stock_data(ticker, period):
     try:
         data = yf.download(ticker, period=period)
@@ -39,39 +42,54 @@ def get_stock_data(ticker, period):
     except Exception:
         return None
 
+def predict_stock(data):
+    X = data[['Prev_Close','MA10','MA20','Volume']]
+    y = data['Close']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+
+    prev_date = data.index[-1].strftime("%Y-%m-%d")
+    prev_close = data['Close'].iloc[-1].item()
+    next_day = model.predict([X.iloc[-1].values])[0].item()
+    next_date = (data.index[-1] + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    change = ((next_day - prev_close) / prev_close) * 100
+    r2 = model.score(X_test, y_test)
+
+    return prev_date, prev_close, next_date, next_day, change, r2
+
 if run_prediction:
     data = get_stock_data(ticker, period)
-
     if data is None or data.empty:
         st.error("❌ Invalid ticker or no data available.")
     else:
-        # Train model
-        X = data[['Prev_Close','MA10','MA20','Volume']]
-        y = data['Close']
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-        model = LinearRegression()
-        model.fit(X_train, y_train)
-
-        # Previous and next day info
-        prev_date = data.index[-1].strftime("%Y-%m-%d")
-        prev_close = data['Close'].iloc[-1].item()
-        next_day = model.predict([X.iloc[-1].values])[0].item()
-        next_date = (data.index[-1] + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
-        change = ((next_day - prev_close) / prev_close) * 100
+        prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
 
         # Styled cards
         col1, col2, col3 = st.columns(3)
         col1.markdown(f"<div class='card'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
         col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2>${next_day:.2f}</h2><p class='{ 'positive' if change>0 else 'negative' }'>{change:.2f}%</p></div>", unsafe_allow_html=True)
-        col3.markdown(f"<div class='card'><h2>Model R² Score</h2><p>Performance Metric</p><h2>{model.score(X_test, y_test):.3f}</h2></div>", unsafe_allow_html=True)
+        col3.markdown(f"<div class='card'><h2>Model R² Score</h2><p>Performance Metric</p><h2>{r2:.3f}</h2></div>", unsafe_allow_html=True)
 
-        # ✅ Simple wide-form Plotly chart (no melt)
-        data_reset = data.reset_index()
-        fig = px.line(
-            data_reset,
-            x="Date",   # after reset_index, Yahoo Finance gives "Date"
-            y=["Close","MA10","MA20"],
-            labels={"value":"Price","Date":"Date"},
-            title=f"{ticker} Stock Price & Moving Averages"
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        # ✅ Download button
+        export_df = pd.DataFrame({
+            "Date":[prev_date,next_date],
+            "Close":[prev_close,next_day],
+            "Change%":[0,change]
+        })
+        st.download_button("📥 Download Predictions (CSV)", export_df.to_csv(index=False).encode("utf-8"), "predictions.csv", "text/csv")
+        st.download_button("📥 Download Predictions (Excel)", export_df.to_excel(index=False, engine="openpyxl"), "predictions.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+if run_comparison:
+    results = []
+    for t in multi_tickers:
+        data = get_stock_data(t, period)
+        if data is not None and not data.empty:
+            prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
+            results.append([t, prev_date, prev_close, next_date, next_day, change, r2])
+
+    if results:
+        comp_df = pd.DataFrame(results, columns=["Ticker","Prev Date","Prev Close","Next Date","Predicted Close","Change%","R²"])
+        st.subheader("📊 Multi‑Ticker Comparison")
+        st.dataframe(comp_df)
+        st.download_button("📥 Download Comparison (CSV)", comp_df.to_csv(index=False).encode("utf-8"), "comparison.csv", "text/csv")
