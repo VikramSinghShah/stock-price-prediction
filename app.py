@@ -41,7 +41,7 @@ st.markdown(
         transition: transform 0.2s ease-in-out;
     }
     .card:hover { transform: scale(1.03); }
-    .card h2 {margin: 0; font-size: 30px; color: #FDFEFE;}
+    .card h2 {margin: 0; font-size: 30px; color: #FDFEFE; font-weight:bold;}
     .card p {margin: 8px 0; font-size: 18px; color: #D5DBDB;}
     .positive {color: #2ECC71; font-weight: bold; font-size: 28px;}
     .negative {color: #E74C3C; font-weight: bold; font-size: 28px;}
@@ -132,26 +132,26 @@ if run_comparison:
                 f"""
                 <div class='card'>
                     <h2>{row['Ticker']}</h2>
-                    <p>Prev Date: {row['Prev Date']}</p>
-                    <p>Prev Close: ${row['Prev Close']:.2f}</p>
-                    <p>Next Date: {row['Next Date']}</p>
+                    <p><b>Prev Date:</b> {row['Prev Date']}</p>
+                    <p><b>Prev Close:</b> ${row['Prev Close']:.2f}</p>
+                    <p><b>Next Date:</b> {row['Next Date']}</p>
                     <h2 class='{color_class}'>${row['Predicted Close']:.2f}</h2>
-                    <p>Change: {row['Change%']:.2f}%</p>
-                    <p>Accuracy: {r2_percent:.1f}%</p>
+                    <p><b>Change:</b> {row['Change%']:.2f}%</p>
+                    <p><b>Accuracy:</b> {r2_percent:.1f}%</p>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
     if display_mode in ["Table","Cards + Table + Charts"]:
-        st.dataframe(comp_df, use_container_width=True)
-
-    if display_mode in ["Charts","Cards + Table + Charts"]:
-        with st.expander("📊 See Interactive Charts"):
-            df_melt = comp_df.melt(id_vars="Ticker", value_vars=["Prev Close","Predicted Close"], var_name="Type", value_name="Price")
-            fig1 = px.bar(df_melt, x="Ticker", y="Price", color="Type", barmode="group",
-                          title="Predicted vs Previous Close",
-                          labels={"Price":"Price","Ticker":"Stock"})
-            st.plotly_chart(fig1, use_container_width=True)
-
-            fig
+        # Styled table to match background
+        styled_df = comp_df.style.format({
+            "Prev Close":"${:.2f}",
+            "Predicted Close":"${:.2f}",
+            "Change%":"{:.2f}%",
+            "R²":"{:.3f}"
+        }).apply(lambda row: [
+            'color: #2ECC71; font-weight:bold;' if row["Predicted Close"] > row["Prev Close"] and col=="Predicted Close"
+            else 'color: #E74C3C; font-weight:bold;' if row["Predicted Close"] < row["Prev Close"] and col=="Predicted Close"
+            else '' for col in comp_df.columns], axis=1)
+        st.dataframe(styled
