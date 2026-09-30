@@ -57,6 +57,15 @@ st.markdown(
         border-radius: 10px;
         padding: 10px;
     }
+    th {
+        font-weight: bold;
+        text-align: center;
+        color: #FDFEFE;
+    }
+    td {
+        text-align: center;
+        color: #FDFEFE;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -116,47 +125,4 @@ if run_prediction:
     col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
     col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>Linear Regression</p><h2>{r2_percent:.1f}%</h2></div>", unsafe_allow_html=True)
 
-    export_df = pd.DataFrame({"Date":[prev_date,next_date],"Close":[prev_close,next_day],"Change%":[0,change]})
-    st.download_button("📥 Download Predictions (CSV)", export_df.to_csv(index=False).encode("utf-8"), "predictions.csv", "text/csv")
-
-# Multi-ticker comparison
-if run_comparison:
-    results = []
-    for t in multi_tickers:
-        data = get_stock_data(t, period)
-        prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
-        results.append([t, prev_date, prev_close, next_date, next_day, change, r2])
-
-    comp_df = pd.DataFrame(results, columns=["Ticker","Prev Date","Prev Close","Next Date","Predicted Close","Change%","R²"])
-    st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison</div>", unsafe_allow_html=True)
-
-    # ✅ Card view
-    if display_mode in ["Cards","Cards + Table + Charts"]:
-        cols = st.columns(len(comp_df))
-        for idx, row in comp_df.iterrows():
-            r2_percent = row["R²"] * 100
-            color_class = "positive" if row["Predicted Close"] > row["Prev Close"] else "negative"
-            cols[idx].markdown(
-                f"""
-                <div class='card'>
-                    <h2>{row['Ticker']}</h2>
-                    <p><b>Prev Date:</b> {row['Prev Date']}</p>
-                    <p><b>Prev Close:</b> ${row['Prev Close']:.2f}</p>
-                    <p><b>Next Date:</b> {row['Next Date']}</p>
-                    <h2 class='{color_class}'>${row['Predicted Close']:.2f}</h2>
-                    <p><b>Change:</b> {row['Change%']:.2f}%</p>
-                    <p><b>Accuracy:</b> {r2_percent:.1f}%</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-    # ✅ Styled table view
-    if display_mode in ["Table","Cards + Table + Charts"]:
-        comp_df["R²"] = comp_df["R²"].apply(lambda x: f"{x*100:.1f}%")
-        st.dataframe(comp_df, use_container_width=True)
-
-    # ✅ Charts view
-    if display_mode in ["Charts","Cards + Table + Charts"]:
-        with st.expander("📊 Charts"):
-            fig1 = px.bar(comp_df, x="Ticker")
+    export_df = pd.DataFrame({"Date":[prev_date,next_date],"Close":[prev_close,next_day]})
