@@ -80,7 +80,6 @@ def predict_stock(data, forecast_days=1):
     prev_date = data.index[-1].strftime("%Y-%m-%d")
     prev_close = data['Close'].iloc[-1].item()
 
-    # Forecast horizon
     next_date = (data.index[-1] + pd.Timedelta(days=forecast_days)).strftime("%Y-%m-%d")
     next_day = model.predict([X_scaled[-1]])[0].item()
     change = ((next_day - prev_close) / prev_close) * 100
@@ -142,4 +141,7 @@ if run_comparison:
                               hover_data={"Change%":True,"R²":True})
                 st.plotly_chart(fig2, use_container_width=True)
 
-                st.markdown("<p style='text-align:center
+                # ✅ Fixed legend line
+                st.markdown("<p style='text-align:center; font-size:16px;'>🟢 Profit | 🔴 Loss | R² = Model Accuracy</p>", unsafe_allow_html=True)
+
+        st.download_button("📥 Download Comparison (CSV)", comp_df.to_csv(index=False).encode("utf-8"), "comparison.csv", "text/csv")
