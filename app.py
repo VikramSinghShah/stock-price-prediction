@@ -37,7 +37,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown('<div class="main-title">📈 Stock Price Prediction Dashboard</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title"> Stock Price Prediction Dashboard</div>', unsafe_allow_html=True)
 
 # Sidebar controls
 st.sidebar.header("⚙️ Settings")
@@ -103,7 +103,7 @@ if run_comparison:
 
     if results:
         comp_df = pd.DataFrame(results, columns=["Ticker","Prev Date","Prev Close","Next Date","Predicted Close","Change%","R²"])
-        st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'> Multi‑Ticker Comparison</div>", unsafe_allow_html=True)
 
         def highlight_pred(row):
             return ['color: green; font-weight:bold;' if row["Predicted Close"] > row["Prev Close"] and col=="Predicted Close"
@@ -115,7 +115,7 @@ if run_comparison:
             st.dataframe(styled_df, use_container_width=True)
 
         if display_mode in ["Charts Only","Table + Charts"]:
-            with st.expander("📊 See Interactive Charts"):
+            with st.expander("See Interactive Charts"):
                 df_melt = comp_df.melt(id_vars="Ticker", value_vars=["Prev Close","Predicted Close"], var_name="Type", value_name="Price")
                 fig1 = px.bar(df_melt, x="Ticker", y="Price", color="Type", barmode="group",
                               title="Predicted vs Previous Close",
