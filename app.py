@@ -150,4 +150,23 @@ if run_comparison:
             "Prev Close":"${:.2f}",
             "Predicted Close":"${:.2f}",
             "Change%":"{:.2f}%",
-            "R²":"{:.3f}"})
+            "R²":"{:.3f}"
+        }).apply(
+            lambda row: [
+                'color: #2ECC71; font-weight:bold;' if row["Predicted Close"] > row["Prev Close"] and col=="Predicted Close"
+                else 'color: #E74C3C; font-weight:bold;' if row["Predicted Close"] < row["Prev Close"] and col=="Predicted Close"
+                else '' for col in comp_df.columns
+            ],
+            axis=1
+        )
+        st.dataframe(styled_df, use_container_width=True)
+
+    # ✅ Charts view
+        # ✅ Charts view
+    if display_mode in ["Charts", "Cards + Table + Charts"]:
+        st.subheader("📈 Predicted vs Previous Close")
+
+        chart_df = comp_df[["Ticker", "Prev Close", "Predicted Close"]].copy()
+        chart_df = chart_df.set_index("Ticker")
+
+        st.bar_chart(chart_df)
