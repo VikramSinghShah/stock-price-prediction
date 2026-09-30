@@ -37,7 +37,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown('<div class="main-title">📈 Advanced Stock Price Prediction Dashboard</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">📈 Stock Price Prediction Dashboard</div>', unsafe_allow_html=True)
 
 # Sidebar controls
 st.sidebar.header("⚙️ Settings")
