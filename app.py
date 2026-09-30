@@ -123,6 +123,7 @@ if run_comparison:
     comp_df = pd.DataFrame(results, columns=["Ticker","Prev Date","Prev Close","Next Date","Predicted Close","Change%","R²"])
     st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison</div>", unsafe_allow_html=True)
 
+    # ✅ Card view
     if display_mode in ["Cards","Cards + Table + Charts"]:
         cols = st.columns(len(comp_df))
         for idx, row in comp_df.iterrows():
@@ -143,15 +144,10 @@ if run_comparison:
                 unsafe_allow_html=True
             )
 
+    # ✅ Styled table view
     if display_mode in ["Table","Cards + Table + Charts"]:
-        # Styled table to match background
         styled_df = comp_df.style.format({
             "Prev Close":"${:.2f}",
             "Predicted Close":"${:.2f}",
             "Change%":"{:.2f}%",
-            "R²":"{:.3f}"
-        }).apply(lambda row: [
-            'color: #2ECC71; font-weight:bold;' if row["Predicted Close"] > row["Prev Close"] and col=="Predicted Close"
-            else 'color: #E74C3C; font-weight:bold;' if row["Predicted Close"] < row["Prev Close"] and col=="Predicted Close"
-            else '' for col in comp_df.columns], axis=1)
-        st.dataframe(styled
+            "R²":"{:.3f}"})
