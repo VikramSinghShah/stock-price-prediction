@@ -43,8 +43,8 @@ st.markdown(
     .card:hover { transform: scale(1.03); }
     .card h2 {margin: 0; font-size: 30px; color: #FDFEFE;}
     .card p {margin: 8px 0; font-size: 18px; color: #D5DBDB;}
-    .positive {color: #2ECC71; font-weight: bold; font-size: 32px;}
-    .negative {color: #E74C3C; font-weight: bold; font-size: 32px;}
+    .positive {color: #2ECC71; font-weight: bold; font-size: 28px;}
+    .negative {color: #E74C3C; font-weight: bold; font-size: 28px;}
     .section-title {
         text-align: center; font-size: 32px; font-weight: bold;
         margin-top: 40px; margin-bottom: 20px; color:#FDFEFE;
@@ -150,4 +150,8 @@ if run_comparison:
         with st.expander("📊 See Interactive Charts"):
             df_melt = comp_df.melt(id_vars="Ticker", value_vars=["Prev Close","Predicted Close"], var_name="Type", value_name="Price")
             fig1 = px.bar(df_melt, x="Ticker", y="Price", color="Type", barmode="group",
-                          title="Predicted vs Previous Close")
+                          title="Predicted vs Previous Close",
+                          labels={"Price":"Price","Ticker":"Stock"})
+            st.plotly_chart(fig1, use_container_width=True)
+
+            fig
