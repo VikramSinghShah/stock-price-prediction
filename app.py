@@ -152,18 +152,24 @@ if run_comparison:
     # ✅ Cards
     if display_mode in ["Cards","Cards + Table + Charts"]:
         st.markdown("<div class='section-title'>📋 Multi‑Ticker Cards</div>", unsafe_allow_html=True)
-        cols = st.columns(len(chart_df))
-        for i, row in chart_df.iterrows():
-            cols[i].markdown(
-                f"""
+        # Show cards in rows of 3
+        for i in range(0, len(chart_df), 3):
+            row = chart_df.iloc[i:i+3]
+            cols = st.columns(len(row))
+            for j, (_, r) in enumerate(row.iterrows()):
+                change_value = float(r["Change%"].replace("%",""))
+                change_class = "positive" if change_value >= 0 else "negative"
+                
+                cols[j].markdown(
+                    f"""
                 <div class='card'>
-                    <h2>{row['Ticker']}</h2>
-                    <p><b>Prev Date:</b> {row['Prev Date']}</p>
-                    <h2 style="font-size:26px;">{row['Prev Close']}</h2>
-                    <p><b>Next Date:</b> {row['Next Date']}</p>
-                    <h2 style="font-size:26px;">{row['Predicted Close']}</h2>
-                    <p><b>Change:</b> {row['Change%']}</p>
-                    <p><b>Accuracy:</b> {row['Accuracy (R²)']}</p>
+                    <h2>{r['Ticker']}</h2>
+                    <p><b>Prev Date:</b> {r['Prev Date']}</p>
+                    <h2 style="font-size:26px;">{r['Prev Close']}</h2>
+                    <p><b>Next Date:</b> {r['Next Date']}</p>
+                    <h2 style="font-size:26px;" class="{change_class}">{r['Predicted Close']}</h2>
+                    <p><b>Change:</b> <span class="{change_class}">{r['Change%']}</span></p>
+                    <p><b>Accuracy:</b> {r['Accuracy (R²)']}</p>
                 </div>
                 """,
                 unsafe_allow_html=True
