@@ -2,8 +2,9 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 import plotly.express as px
 
 st.set_page_config(page_title="Stock Price Prediction", layout="wide")
@@ -37,12 +38,13 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown('<div class="main-title"> Stock Price Prediction Dashboard</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">📈 Advanced Stock Price Prediction Dashboard</div>', unsafe_allow_html=True)
 
 # Sidebar controls
 st.sidebar.header("⚙️ Settings")
 ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL")
 period = st.sidebar.selectbox("Data Period", ["1y", "2y", "5y"], index=1)
+forecast_days = st.sidebar.slider("Forecast Horizon (days)", 1, 7, 1)
 run_prediction = st.sidebar.button("Run Prediction")
 
 multi_tickers = st.sidebar.multiselect("Compare Multiple Tickers", ["AAPL","TSLA","MSFT"], default=["AAPL","TSLA","MSFT"])
@@ -55,22 +57,32 @@ def get_stock_data(ticker, period):
         data['Prev_Close'] = data['Close'].shift(1)
         data['MA10'] = data['Close'].rolling(10).mean()
         data['MA20'] = data['Close'].rolling(20).mean()
+        data['MA50'] = data['Close'].rolling(50).mean()
+        data['Return'] = data['Close'].pct_change()
+        data['Volatility'] = data['Close'].rolling(10).std()
         data = data.dropna()
         return data
     except Exception:
         return None
 
-def predict_stock(data):
-    X = data[['Prev_Close','MA10','MA20','Volume']]
+def predict_stock(data, forecast_days=1):
+    X = data[['Prev_Close','MA10','MA20','MA50','Volume','Return','Volatility']]
     y = data['Close']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-    model = LinearRegression()
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, shuffle=False)
+
+    model = RandomForestRegressor(n_estimators=200, max_depth=10, random_state=42)
     model.fit(X_train, y_train)
 
     prev_date = data.index[-1].strftime("%Y-%m-%d")
     prev_close = data['Close'].iloc[-1].item()
-    next_day = model.predict([X.iloc[-1].values])[0].item()
-    next_date = (data.index[-1] + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # Forecast horizon
+    next_date = (data.index[-1] + pd.Timedelta(days=forecast_days)).strftime("%Y-%m-%d")
+    next_day = model.predict([X_scaled[-1]])[0].item()
     change = ((next_day - prev_close) / prev_close) * 100
     r2 = model.score(X_test, y_test)
 
@@ -82,11 +94,11 @@ if run_prediction:
     if data is None or data.empty:
         st.error("❌ Invalid ticker or no data available.")
     else:
-        prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
+        prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data, forecast_days)
 
         col1, col2, col3 = st.columns(3)
         col1.markdown(f"<div class='card' title='Previous day closing price'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
-        col2.markdown(f"<div class='card' title='Green = profit, Red = loss'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
+        col2.markdown(f"<div class='card' title='Green = profit, Red = loss'><h2>Predicted Close ({forecast_days}d)</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
         col3.markdown(f"<div class='card' title='R² shows how well the model fits'><h2>Model Accuracy (R²)</h2><p>Performance Metric</p><h2>{r2:.3f}</h2></div>", unsafe_allow_html=True)
 
         export_df = pd.DataFrame({"Date":[prev_date,next_date],"Close":[prev_close,next_day],"Change%":[0,change]})
@@ -98,12 +110,12 @@ if run_comparison:
     for t in multi_tickers:
         data = get_stock_data(t, period)
         if data is not None and not data.empty:
-            prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
+            prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data, forecast_days)
             results.append([t, prev_date, prev_close, next_date, next_day, change, r2])
 
     if results:
         comp_df = pd.DataFrame(results, columns=["Ticker","Prev Date","Prev Close","Next Date","Predicted Close","Change%","R²"])
-        st.markdown("<div class='section-title'> Multi‑Ticker Comparison</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison</div>", unsafe_allow_html=True)
 
         def highlight_pred(row):
             return ['color: green; font-weight:bold;' if row["Predicted Close"] > row["Prev Close"] and col=="Predicted Close"
@@ -115,7 +127,7 @@ if run_comparison:
             st.dataframe(styled_df, use_container_width=True)
 
         if display_mode in ["Charts Only","Table + Charts"]:
-            with st.expander("See Interactive Charts"):
+            with st.expander("📊 See Interactive Charts"):
                 df_melt = comp_df.melt(id_vars="Ticker", value_vars=["Prev Close","Predicted Close"], var_name="Type", value_name="Price")
                 fig1 = px.bar(df_melt, x="Ticker", y="Price", color="Type", barmode="group",
                               title="Predicted vs Previous Close",
@@ -130,6 +142,4 @@ if run_comparison:
                               hover_data={"Change%":True,"R²":True})
                 st.plotly_chart(fig2, use_container_width=True)
 
-                st.markdown("<p style='text-align:center; font-size:16px;'>🟢 Profit | 🔴 Loss | R² = Model Accuracy</p>", unsafe_allow_html=True)
-
-        st.download_button("📥 Download Comparison (CSV)", comp_df.to_csv(index=False).encode("utf-8"), "comparison.csv", "text/csv")
+                st.markdown("<p style='text-align:center
