@@ -166,3 +166,21 @@ if run_comparison:
                 """,
                 unsafe_allow_html=True
             )
+
+    # ✅ Table
+    if display_mode in ["Table","Cards + Table + Charts"]:
+        st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison Table</div>", unsafe_allow_html=True)
+        styled_table = chart_df.to_html(index=False, classes="dataframe", justify="center")
+        st.markdown(f"<div style='display:flex; justify-content:center;'>{styled_table}</div>", unsafe_allow_html=True)
+
+    # ✅ Charts
+    if display_mode in ["Charts","Cards + Table + Charts"]:
+        st.markdown("<div class='section-title'>📈 Multi‑Ticker Charts</div>", unsafe_allow_html=True)
+        fig = px.line(chart_df, x="Ticker", y="Predicted Close", text="Accuracy (R²)")
+        fig.update_traces(textposition="top center")
+        fig.update_layout(
+            plot_bgcolor="rgba(0,0,0,0.4)",   # darker shade for visibility
+            paper_bgcolor="rgba(0,0,0,0.4)",
+            font=dict(color="#FDFEFE")
+        )
+        st.plotly_chart(fig, use_container_width=True)
