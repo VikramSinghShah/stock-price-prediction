@@ -178,9 +178,29 @@ if run_comparison:
     # ✅ Table
     if display_mode in ["Table","Cards + Table + Charts"]:
         st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison Table</div>", unsafe_allow_html=True)
-        styled_table = chart_df.to_html(index=False, classes="dataframe", justify="center")
+        
+        # Function to color Predicted Close based on Change%
+        def highlight_predicted(val, change):
+            try:
+                change_val = float(change.replace("%",""))
+                if change_val >= 0:
+                    return 'color: #2ECC71; font-weight:bold;'  # green
+                else:
+                    return 'color: #E74C3C; font-weight:bold;'  # red
+            except:
+                return ''
+            
+        # Apply styling row by row
+        styled = chart_df.style.apply(
+            lambda row: [
+                highlight_predicted(row["Predicted Close"], row["Change%"]) if col=="Predicted Close" else ''
+                for col in chart_df.columns],
+            axis=1)
+        
+        # Convert to HTML with your custom CSS
+        styled_table = styled.to_html(index=False, classes="dataframe", justify="center")
         st.markdown(f"<div style='display:flex; justify-content:center;'>{styled_table}</div>", unsafe_allow_html=True)
-
+        
     # ✅ Charts
     if display_mode in ["Charts","Cards + Table + Charts"]:
         st.markdown("<div class='section-title'>📈 Multi‑Ticker Charts</div>", unsafe_allow_html=True)
