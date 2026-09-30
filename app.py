@@ -158,8 +158,10 @@ if run_comparison:
                 f"""
                 <div class='card'>
                     <h2>{row['Ticker']}</h2>
-                    <p><b>Prev:</b> {row['Prev Close']}</p>
-                    <p><b>Next:</b> {row['Predicted Close']}</p>
+                    <p><b>Prev Date:</b> {row['Prev Date']}</p>
+                    <h2 style="font-size:26px;">{row['Prev Close']}</h2>
+                    <p><b>Next Date:</b> {row['Next Date']}</p>
+                    <h2 style="font-size:26px;">{row['Predicted Close']}</h2>
                     <p><b>Change:</b> {row['Change%']}</p>
                     <p><b>Accuracy:</b> {row['Accuracy (R²)']}</p>
                 </div>
