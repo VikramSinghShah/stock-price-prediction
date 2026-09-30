@@ -24,7 +24,7 @@ st.markdown(
         content: "";
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(0,0,0,0.55); /* dark overlay */
+        background-color: rgba(0,0,0,0.55);
         z-index: -1;
     }
     .main-title {
@@ -65,7 +65,7 @@ run_prediction = st.sidebar.button("Run Prediction")
 
 multi_tickers = st.sidebar.multiselect("Compare Multiple Tickers", ["AAPL","TSLA","MSFT"], default=["AAPL","TSLA","MSFT"])
 run_comparison = st.sidebar.button("Run Comparison")
-display_mode = st.sidebar.radio("Show in Comparison", ["Table Only","Charts Only","Table + Charts"], index=2)
+display_mode = st.sidebar.radio("Show in Comparison", ["Cards","Table","Charts","Cards + Table + Charts"], index=0)
 
 def get_stock_data(ticker, period):
     data = yf.download(ticker, period=period)
@@ -102,11 +102,12 @@ def predict_stock(data):
 if run_prediction:
     data = get_stock_data(ticker, period)
     prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
+    r2_percent = r2 * 100
 
     col1, col2, col3 = st.columns(3)
     col1.markdown(f"<div class='card'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
     col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
-    col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>Linear Regression</p><h2>{r2:.3f}</h2></div>", unsafe_allow_html=True)
+    col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>Linear Regression</p><h2>{r2_percent:.1f}%</h2></div>", unsafe_allow_html=True)
 
     export_df = pd.DataFrame({"Date":[prev_date,next_date],"Close":[prev_close,next_day],"Change%":[0,change]})
     st.download_button("📥 Download Predictions (CSV)", export_df.to_csv(index=False).encode("utf-8"), "predictions.csv", "text/csv")
@@ -122,25 +123,31 @@ if run_comparison:
     comp_df = pd.DataFrame(results, columns=["Ticker","Prev Date","Prev Close","Next Date","Predicted Close","Change%","R²"])
     st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison</div>", unsafe_allow_html=True)
 
-    if display_mode in ["Table Only","Table + Charts"]:
-        st.dataframe(comp_df.style.apply(
-            lambda row: ['color: #2ECC71; font-weight:bold;' if row["Predicted Close"] > row["Prev Close"] and col=="Predicted Close"
-                         else 'color: #E74C3C; font-weight:bold;' if row["Predicted Close"] < row["Prev Close"] and col=="Predicted Close"
-                         else '' for col in comp_df.columns], axis=1
-        ), use_container_width=True)
+    if display_mode in ["Cards","Cards + Table + Charts"]:
+        cols = st.columns(len(comp_df))
+        for idx, row in comp_df.iterrows():
+            r2_percent = row["R²"] * 100
+            color_class = "positive" if row["Predicted Close"] > row["Prev Close"] else "negative"
+            cols[idx].markdown(
+                f"""
+                <div class='card'>
+                    <h2>{row['Ticker']}</h2>
+                    <p>Prev Date: {row['Prev Date']}</p>
+                    <p>Prev Close: ${row['Prev Close']:.2f}</p>
+                    <p>Next Date: {row['Next Date']}</p>
+                    <h2 class='{color_class}'>${row['Predicted Close']:.2f}</h2>
+                    <p>Change: {row['Change%']:.2f}%</p>
+                    <p>Accuracy: {r2_percent:.1f}%</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
-    if display_mode in ["Charts Only","Table + Charts"]:
+    if display_mode in ["Table","Cards + Table + Charts"]:
+        st.dataframe(comp_df, use_container_width=True)
+
+    if display_mode in ["Charts","Cards + Table + Charts"]:
         with st.expander("📊 See Interactive Charts"):
             df_melt = comp_df.melt(id_vars="Ticker", value_vars=["Prev Close","Predicted Close"], var_name="Type", value_name="Price")
             fig1 = px.bar(df_melt, x="Ticker", y="Price", color="Type", barmode="group",
                           title="Predicted vs Previous Close")
-            st.plotly_chart(fig1, use_container_width=True)
-
-            fig2 = px.bar(comp_df, x="Ticker", y="Change%", color="Change%",
-                          title="Predicted Percentage Change",
-                          color_continuous_scale=["red","green"])
-            st.plotly_chart(fig2, use_container_width=True)
-
-            st.markdown("<p style='text-align:center; font-size:16px;'>🟢 Profit | 🔴 Loss | R² = Model Accuracy</p>", unsafe_allow_html=True)
-
-    st.download_button("📥 Download Comparison (CSV)", comp_df.to_csv(index=False).encode("utf-8"), "comparison.csv", "text/csv")
