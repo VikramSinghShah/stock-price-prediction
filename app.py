@@ -56,6 +56,8 @@ st.markdown(
         color: #FDFEFE;
         border-radius: 10px;
         padding: 10px;
+        margin: auto;
+        width: 90%;
     }
     th {
         font-weight: bold;
@@ -147,19 +149,20 @@ if run_comparison:
 
     chart_df = pd.DataFrame(results)
 
-    if display_mode in ["Table","Cards + Table + Charts"]:
-        st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison Table</div>", unsafe_allow_html=True)
-        styled_table = chart_df.to_html(index=False, classes="dataframe", justify="center")
-        st.markdown(styled_table, unsafe_allow_html=True)
-        st.download_button("⬇️ Download Comparison Data", chart_df.to_csv(index=False), "comparison.csv", "text/csv")
-
-    if display_mode in ["Charts","Cards + Table + Charts"]:
-        st.markdown("<div class='section-title'>📈 Multi‑Ticker Charts</div>", unsafe_allow_html=True)
-        fig = px.line(chart_df, x="Ticker", y="Predicted Close", text="Accuracy (R²)")
-        fig.update_traces(textposition="top center")
-        fig.update_layout(
-            plot_bgcolor="rgba(255,255,255,0.08)",
-            paper_bgcolor="rgba(255,255,255,0.08)",
-            font=dict(color="#FDFEFE")
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    # ✅ Cards
+    if display_mode in ["Cards","Cards + Table + Charts"]:
+        st.markdown("<div class='section-title'>📋 Multi‑Ticker Cards</div>", unsafe_allow_html=True)
+        cols = st.columns(len(chart_df))
+        for i, row in chart_df.iterrows():
+            cols[i].markdown(
+                f"""
+                <div class='card'>
+                    <h2>{row['Ticker']}</h2>
+                    <p><b>Prev:</b> {row['Prev Close']}</p>
+                    <p><b>Next:</b> {row['Predicted Close']}</p>
+                    <p><b>Change:</b> {row['Change%']}</p>
+                    <p><b>Accuracy:</b> {row['Accuracy (R²)']}</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
