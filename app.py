@@ -50,7 +50,6 @@ st.markdown(
         margin-top: 40px; margin-bottom: 20px; color:#FDFEFE;
         text-shadow: 1px 1px 6px rgba(0,0,0,0.6);
     }
-    /* ✅ Table styling */
     .dataframe {
         background: rgba(255,255,255,0.08);
         color: #FDFEFE;
@@ -59,12 +58,7 @@ st.markdown(
         margin: auto;
         width: 90%;
     }
-    th {
-        font-weight: bold;
-        text-align: center;
-        color: #FDFEFE;
-    }
-    td {
+    th, td {
         text-align: center;
         color: #FDFEFE;
     }
@@ -77,14 +71,36 @@ st.markdown('<div class="main-title"> Stock Price Prediction Dashboard</div>', u
 
 # Sidebar controls
 st.sidebar.header("⚙️ Settings")
-ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL")
+
+# ✅ Single ticker input (dynamic)
+ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL").upper()
+
 period = st.sidebar.selectbox("Data Period", ["1y", "2y", "5y"], index=1)
 run_prediction = st.sidebar.button("Run Prediction")
 
-multi_tickers = st.sidebar.multiselect("Compare Multiple Tickers", ["AAPL","TSLA","MSFT"], default=["AAPL","TSLA","MSFT"])
-run_comparison = st.sidebar.button("Run Comparison")
-display_mode = st.sidebar.radio("Show in Comparison", ["Cards","Table","Charts","Cards + Table + Charts"], index=0)
+# ✅ Multi-ticker input (popular + custom)
+popular_tickers = ["AAPL","TSLA","MSFT","AMZN","GOOG","META","NFLX","NVDA"]
 
+selected_popular = st.sidebar.multiselect(
+    "Choose Popular Tickers",
+    popular_tickers,
+    default=["AAPL","TSLA","MSFT"]
+)
+
+custom_input = st.sidebar.text_input("Add Custom Tickers (comma separated)", "")
+
+# Merge both popular and custom tickers
+multi_tickers = selected_popular + [t.strip().upper() for t in custom_input.split(",") if t.strip()]
+
+run_comparison = st.sidebar.button("Run Comparison")
+
+display_mode = st.sidebar.radio(
+    "Show in Comparison",
+    ["Cards","Table","Charts","Cards + Table + Charts"],
+    index=0
+)
+
+# ✅ Functions
 def get_stock_data(ticker, period):
     data = yf.download(ticker, period=period)
     data['Prev_Close'] = data['Close'].shift(1)
@@ -99,116 +115,76 @@ def get_stock_data(ticker, period):
 def predict_stock(data):
     X = data[['Prev_Close','MA10','MA20','MA50','MA100','Volume','Return','Volatility']]
     y = data['Close']
-
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, shuffle=False)
     model = LinearRegression()
     model.fit(X_train, y_train)
     r2 = model.score(X_test, y_test)
-
     prev_date = data.index[-1].strftime("%Y-%m-%d")
     prev_close = data['Close'].iloc[-1].item()
     next_date = (data.index[-1] + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
     next_day = model.predict([X_scaled[-1]])[0].item()
     change = ((next_day - prev_close) / prev_close) * 100
-
     return prev_date, prev_close, next_date, next_day, change, r2
 
 # ✅ Single ticker prediction
-if run_prediction:
-    data = get_stock_data(ticker, period)
-    prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
-    r2_percent = r2 * 100
-
-    col1, col2, col3 = st.columns(3)
-    col1.markdown(f"<div class='card'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
-    col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
-    col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>Linear Regression</p><h2>{r2_percent:.1f}%</h2></div>", unsafe_allow_html=True)
-
-    export_df = pd.DataFrame({"Date":[prev_date,next_date],"Close":[prev_close,next_day]})
-    st.download_button("⬇️ Download Prediction Data", export_df.to_csv(index=False), "prediction.csv", "text/csv")
-
-# ✅ Multi-ticker comparison
-if run_comparison:
-    results = []
-    for t in multi_tickers:
-        data = get_stock_data(t, period)
+if run_prediction and ticker:
+    try:
+        data = get_stock_data(ticker, period)
         prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
         r2_percent = r2 * 100
-        results.append({
-            "Ticker": t,
-            "Prev Date": prev_date,
-            "Prev Close": f"${prev_close:.2f}",
-            "Next Date": next_date,
-            "Predicted Close": f"${next_day:.2f}",
-            "Change%": f"{change:.2f}%",
-            "Accuracy (R²)": f"{r2_percent:.1f}%"
-        })
+        col1, col2, col3 = st.columns(3)
+        col1.markdown(f"<div class='card'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
+        col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
+        col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>Linear Regression</p><h2>{r2_percent:.1f}%</h2></div>", unsafe_allow_html=True)
+        export_df = pd.DataFrame({"Date":[prev_date,next_date],"Close":[prev_close,next_day]})
+        st.download_button("⬇️ Download Prediction Data", export_df.to_csv(index=False), "prediction.csv", "text/csv")
+    except Exception as e:
+        st.error(f"Error fetching data for {ticker}: {e}")
 
-    chart_df = pd.DataFrame(results)
-    
-    # ✅ Cards
-    if display_mode in ["Cards","Cards + Table + Charts"]:
-        st.markdown("<div class='section-title'>📋 Multi‑Ticker Cards</div>", unsafe_allow_html=True)
-        # Show cards in rows of 3
-        for i in range(0, len(chart_df), 3):
-            row = chart_df.iloc[i:i+3]
-            cols = st.columns(len(row))
-            for j, (_, r) in enumerate(row.iterrows()):
-                change_value = float(r["Change%"].replace("%",""))
-                change_class = "positive" if change_value >= 0 else "negative"
-                
-                cols[j].markdown(
-                    f"""
-                <div class='card'>
-                    <h2>{r['Ticker']}</h2>
-                    <p><b>Prev Date:</b> {r['Prev Date']}</p>
-                    <h2 style="font-size:26px;">{r['Prev Close']}</h2>
-                    <p><b>Next Date:</b> {r['Next Date']}</p>
-                    <h2 style="font-size:26px;" class="{change_class}">{r['Predicted Close']}</h2>
-                    <p><b>Change:</b> <span class="{change_class}">{r['Change%']}</span></p>
-                    <p><b>Accuracy:</b> {r['Accuracy (R²)']}</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+# ✅ Multi-ticker comparison
+if run_comparison and multi_tickers:
+    results = []
+    for t in multi_tickers:
+        try:
+            data = get_stock_data(t, period)
+            prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
+            r2_percent = r2 * 100
+            results.append({
+                "Ticker": t,
+                "Prev Date": prev_date,
+                "Prev Close": f"${prev_close:.2f}",
+                "Next Date": next_date,
+                "Predicted Close": f"${next_day:.2f}",
+                "Change%": f"{change:.2f}%",
+                "Accuracy (R²)": f"{r2_percent:.1f}%"
+            })
+        except Exception as e:
+            st.warning(f"Could not fetch data for {t}: {e}")
 
-    # ✅ Table
-    if display_mode in ["Table","Cards + Table + Charts"]:
-        st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison Table</div>", unsafe_allow_html=True)
-        
-        # Function to color Predicted Close based on Change%
-        def highlight_predicted(val, change):
-            try:
-                change_val = float(change.replace("%",""))
-                if change_val >= 0:
-                    return 'color: #2ECC71; font-weight:bold;'  # green
-                else:
-                    return 'color: #E74C3C; font-weight:bold;'  # red
-            except:
-                return ''
-            
-        # Apply styling row by row
-        styled = chart_df.style.apply(
-            lambda row: [
-                highlight_predicted(row["Predicted Close"], row["Change%"]) if col=="Predicted Close" else ''
-                for col in chart_df.columns],
-            axis=1)
-        
-        # Convert to HTML with your custom CSS
-        styled_table = styled.to_html(index=False, classes="dataframe", justify="center")
-        st.markdown(f"<div style='display:flex; justify-content:center;'>{styled_table}</div>", unsafe_allow_html=True)
-        
-    # ✅ Charts
-    if display_mode in ["Charts","Cards + Table + Charts"]:
-        st.markdown("<div class='section-title'>📈 Multi‑Ticker Charts</div>", unsafe_allow_html=True)
-        fig = px.line(chart_df, x="Ticker", y="Predicted Close", text="Accuracy (R²)")
-        fig.update_traces(textposition="top center")
-        fig.update_layout(
-            plot_bgcolor="rgba(0,0,0,0.4)",   # darker shade for visibility
-            paper_bgcolor="rgba(0,0,0,0.4)",
-            font=dict(color="#FDFEFE")
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    if results:
+        chart_df = pd.DataFrame(results)
+
+        # ✅ Cards
+        if display_mode in ["Cards","Cards + Table + Charts"]:
+            st.markdown("<div class='section-title'>📋 Multi‑Ticker Cards</div>", unsafe_allow_html=True)
+            for i in range(0, len(chart_df), 3):
+                row = chart_df.iloc[i:i+3]
+                cols = st.columns(len(row))
+                for j, (_, r) in enumerate(row.iterrows()):
+                    change_value = float(r["Change%"].replace("%",""))
+                    change_class = "positive" if change_value >= 0 else "negative"
+                    cols[j].markdown(
+                        f"""
+                        <div class='card'>
+                            <h2>{r['Ticker']}</h2>
+                            <p><b>Prev Date:</b> {r['Prev Date']}</p>
+                            <h2 style="font-size:26px;">{r['Prev Close']}</h2>
+                            <p><b>Next Date:</b> {r['Next Date']}</p>
+                            <h2 style="font-size:26px;" class="{change_class}">{r['Predicted Close']}</h2>
+                            <p><b>Change:</b> <span class="{change_class}">{r['Change%']}</span></p>
+                            <p><b>Accuracy:</b> {r['Accuracy (R²)']}</p>
+                        </div>
+                        """,
+                        unsafe_allow_html=True)
