@@ -74,35 +74,31 @@ st.sidebar.header("⚙️ Settings")
 
 # ✅ Single ticker input (dynamic)
 ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL").upper()
-
 period = st.sidebar.selectbox("Data Period", ["1y", "2y", "5y"], index=1)
 run_prediction = st.sidebar.button("Run Prediction")
 
 # ✅ Multi-ticker input (popular + custom)
 popular_tickers = ["AAPL","TSLA","MSFT","AMZN","GOOG","META","NFLX","NVDA"]
-
-selected_popular = st.sidebar.multiselect(
-    "Choose Popular Tickers",
-    popular_tickers,
-    default=["AAPL","TSLA","MSFT"]
-)
-
+selected_popular = st.sidebar.multiselect("Choose Popular Tickers", popular_tickers, default=["AAPL","TSLA","MSFT"])
 custom_input = st.sidebar.text_input("Add Custom Tickers (comma separated)", "")
-
-# Merge both popular and custom tickers
 multi_tickers = selected_popular + [t.strip().upper() for t in custom_input.split(",") if t.strip()]
-
 run_comparison = st.sidebar.button("Run Comparison")
 
-display_mode = st.sidebar.radio(
-    "Show in Comparison",
-    ["Cards","Table","Charts","Cards + Table + Charts"],
-    index=0
-)
+display_mode = st.sidebar.radio("Show in Comparison", ["Cards","Table","Charts","Cards + Table + Charts"], index=0)
 
 # ✅ Functions
+def validate_ticker(ticker):
+    """Check if ticker exists on Yahoo Finance"""
+    try:
+        test = yf.Ticker(ticker).info
+        return bool(test) and "regularMarketPrice" in test
+    except Exception:
+        return False
+
 def get_stock_data(ticker, period):
     data = yf.download(ticker, period=period)
+    if data.empty:
+        raise ValueError(f"No data found for {ticker}")
     data['Prev_Close'] = data['Close'].shift(1)
     data['MA10'] = data['Close'].rolling(10).mean()
     data['MA20'] = data['Close'].rolling(20).mean()
@@ -130,38 +126,44 @@ def predict_stock(data):
 
 # ✅ Single ticker prediction
 if run_prediction and ticker:
-    try:
-        data = get_stock_data(ticker, period)
-        prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
-        r2_percent = r2 * 100
-        col1, col2, col3 = st.columns(3)
-        col1.markdown(f"<div class='card'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
-        col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
-        col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>Linear Regression</p><h2>{r2_percent:.1f}%</h2></div>", unsafe_allow_html=True)
-        export_df = pd.DataFrame({"Date":[prev_date,next_date],"Close":[prev_close,next_day]})
-        st.download_button("⬇️ Download Prediction Data", export_df.to_csv(index=False), "prediction.csv", "text/csv")
-    except Exception as e:
-        st.error(f"Error fetching data for {ticker}: {e}")
+    if validate_ticker(ticker):
+        try:
+            data = get_stock_data(ticker, period)
+            prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
+            r2_percent = r2 * 100
+            col1, col2, col3 = st.columns(3)
+            col1.markdown(f"<div class='card'><h2>Previous Close</h2><p>{prev_date}</p><h2>${prev_close:.2f}</h2></div>", unsafe_allow_html=True)
+            col2.markdown(f"<div class='card'><h2>Predicted Next Close</h2><p>{next_date}</p><h2 class='{ 'positive' if next_day>prev_close else 'negative' }'>${next_day:.2f}</h2><p>{change:.2f}%</p></div>", unsafe_allow_html=True)
+            col3.markdown(f"<div class='card'><h2>Model Accuracy (R²)</h2><p>Linear Regression</p><h2>{r2_percent:.1f}%</h2></div>", unsafe_allow_html=True)
+            export_df = pd.DataFrame({"Date":[prev_date,next_date],"Close":[prev_close,next_day]})
+            st.download_button("⬇️ Download Prediction Data", export_df.to_csv(index=False), "prediction.csv", "text/csv")
+        except Exception as e:
+            st.error(f"Error fetching data for {ticker}: {e}")
+    else:
+        st.error(f"Invalid ticker: {ticker}")
 
 # ✅ Multi-ticker comparison
 if run_comparison and multi_tickers:
     results = []
     for t in multi_tickers:
-        try:
-            data = get_stock_data(t, period)
-            prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
-            r2_percent = r2 * 100
-            results.append({
-                "Ticker": t,
-                "Prev Date": prev_date,
-                "Prev Close": f"${prev_close:.2f}",
-                "Next Date": next_date,
-                "Predicted Close": f"${next_day:.2f}",
-                "Change%": f"{change:.2f}%",
-                "Accuracy (R²)": f"{r2_percent:.1f}%"
-            })
-        except Exception as e:
-            st.warning(f"Could not fetch data for {t}: {e}")
+        if validate_ticker(t):
+            try:
+                data = get_stock_data(t, period)
+                prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
+                r2_percent = r2 * 100
+                results.append({
+                    "Ticker": t,
+                    "Prev Date": prev_date,
+                    "Prev Close": f"${prev_close:.2f}",
+                    "Next Date": next_date,
+                    "Predicted Close": f"${next_day:.2f}",
+                    "Change%": f"{change:.2f}%",
+                    "Accuracy (R²)": f"{r2_percent:.1f}%"
+                })
+            except Exception as e:
+                st.warning(f"Could not fetch data for {t}: {e}")
+        else:
+            st.warning(f"Invalid ticker: {t}")
 
     if results:
         chart_df = pd.DataFrame(results)
@@ -187,4 +189,50 @@ if run_comparison and multi_tickers:
                             <p><b>Accuracy:</b> {r['Accuracy (R²)']}</p>
                         </div>
                         """,
-                        unsafe_allow_html=True)
+                        unsafe_allow_html=True
+                    )
+
+        # ✅ Table
+        if display_mode in ["Table","Cards + Table + Charts"]:
+            st.markdown("<div class='section-title'>📊 Multi‑Ticker Comparison Table</div>", unsafe_allow_html=True)
+
+            def highlight_predicted(val, change):
+                try:
+                    change_val = float(change.replace("%",""))
+                    if change_val >= 0:
+                        return 'color: #2ECC71; font-weight:bold;'
+                    else:
+                        return 'color: #E74C3C; font-weight:bold;'
+                except:
+                    return ''
+
+            styled = chart_df.style.apply(
+                lambda row: [
+                    highlight_predicted(row["Predicted Close"], row["Change%"]) if col=="Predicted Close" else ''
+                    for col in chart_df.columns
+                ],
+                axis=1
+            )
+
+            styled_table = styled.to_html(index=False, classes="dataframe", justify="center")
+            st.markdown(f"<div style='display:flex; justify-content:center;'>{styled_table}</div>", unsafe_allow_html=True)
+
+            # ✅ Download button for comparison data
+            st.download_button(
+                "⬇️ Download Comparison Data",
+                chart_df.to_csv(index=False),
+                "comparison.csv",
+                "text/csv"
+            )
+
+        # ✅ Charts
+        if display_mode in ["Charts","Cards + Table + Charts"]:
+            st.markdown("<div class='section-title'>📈 Multi‑Ticker Charts</div>", unsafe_allow_html=True)
+            fig = px.line(chart_df, x="Ticker", y="Predicted Close", text="Accuracy (R²)")
+            fig.update_traces(textposition="top center")
+            fig.update_layout(
+                plot_bgcolor="rgba(0,0,0,0.4)",
+                paper_bgcolor="rgba(0,0,0,0.4)",
+                font=dict(color="#FDFEFE")
+            )
+            st.plotly_chart(fig, use_container_width=True)
