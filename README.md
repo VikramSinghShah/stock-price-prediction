@@ -1,4 +1,4 @@
-# 📈 Stock Price Prediction Dashboard #https://github.com/VikramSinghShah/stock-price-prediction/tree/main
+# 📈 Stock Price Prediction Dashboard
 
 An interactive Streamlit web app that predicts stock prices using machine learning (Linear Regression) and visualizes results with cards, tables, and charts.
 It fetches live financial data from Yahoo Finance, computes technical indicators, and predicts the next day’s closing price for selected tickers.
@@ -41,9 +41,11 @@ line chart showing predicted closes with accuracy labels.
 
 
 # 🧠 Machine Learning
-Model: Linear Regression (from scikit‑learn)
 
-Features used:
+**Model**:
+Linear Regression (from scikit‑learn)
+
+**Features used**:
 
 Previous Close
 
@@ -55,24 +57,25 @@ Return
 
 Volatility
 
-Target: Closing Price
+**Target**: Closing Price
 
-Performance: R² score displayed for each prediction
+**Performance**: R² score displayed for each prediction
 
 
 
 # 🛠 Tech Stack
-# Python
 
-# Streamlit (UI framework)
+Python
 
-# yfinance (data fetching)
+Streamlit (UI framework)
 
-# pandas / numpy (data processing)
+yfinance (data fetching)
 
-# scikit‑learn (machine learning)
+pandas / numpy (data processing)
 
-# plotly.express (charts)
+scikit‑learn (machine learning)
+
+plotly.express (charts)
 
 
 
@@ -86,7 +89,7 @@ background.jpg → background image for styling
 
 Other files → helper scripts, notebooks, or assets
 
-⚙️ How to Run
+#⚙️ How to Run
 
 Clone the repo:
 
