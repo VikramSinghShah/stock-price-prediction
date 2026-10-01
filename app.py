@@ -87,11 +87,11 @@ run_comparison = st.sidebar.button("Run Comparison")
 display_mode = st.sidebar.radio("Show in Comparison", ["Cards","Table","Charts","Cards + Table + Charts"], index=0)
 
 # ✅ Functions
-def validate_ticker(ticker):
-    """Check if ticker exists on Yahoo Finance"""
+def validate_ticker(ticker, period="1y"):
+    """Check if ticker has data on Yahoo Finance"""
     try:
-        test = yf.Ticker(ticker).info
-        return bool(test) and "regularMarketPrice" in test
+        data = yf.download(ticker, period=period)
+        return not data.empty
     except Exception:
         return False
 
@@ -126,7 +126,7 @@ def predict_stock(data):
 
 # ✅ Single ticker prediction
 if run_prediction and ticker:
-    if validate_ticker(ticker):
+    if validate_ticker(ticker, period):
         try:
             data = get_stock_data(ticker, period)
             prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
@@ -146,7 +146,7 @@ if run_prediction and ticker:
 if run_comparison and multi_tickers:
     results = []
     for t in multi_tickers:
-        if validate_ticker(t):
+        if validate_ticker(t, period):
             try:
                 data = get_stock_data(t, period)
                 prev_date, prev_close, next_date, next_day, change, r2 = predict_stock(data)
@@ -236,3 +236,4 @@ if run_comparison and multi_tickers:
                 font=dict(color="#FDFEFE")
             )
             st.plotly_chart(fig, use_container_width=True)
+
