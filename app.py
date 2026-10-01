@@ -81,7 +81,7 @@ ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL")
 period = st.sidebar.selectbox("Data Period", ["1y", "2y", "5y"], index=1)
 run_prediction = st.sidebar.button("Run Prediction")
 
-multi_tickers = st.sidebar.multiselect("Compare Multiple Tickers", ["AAPL","TSLA","MSFT"], default=["AAPL","TSLA","MSFT","AMZN","TTM","META"])
+multi_tickers = st.sidebar.multiselect("Compare Multiple Tickers", ["AAPL","TSLA","MSFT"], default=["AAPL","TSLA","MSFT"])
 run_comparison = st.sidebar.button("Run Comparison")
 display_mode = st.sidebar.radio("Show in Comparison", ["Cards","Table","Charts","Cards + Table + Charts"], index=0)
 
