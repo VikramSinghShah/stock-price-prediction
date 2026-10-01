@@ -131,6 +131,9 @@ How to deploy ML models in a user‑friendly dashboard
 # 📸 Screenshots
 
 Single ticker prediction cards
+<img width="955" height="471" alt="image" src="https://github.com/user-attachments/assets/6f7cb75c-7e31-4df8-861c-c76e064b3599" />
+
+
 
 Multi‑ticker comparison table
 
