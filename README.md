@@ -136,11 +136,13 @@ How to deploy ML models in a user‑friendly dashboard
 
 
 **Multi‑ticker comparison table**
-<img width="958" height="477" alt="image" src="https://github.com/user-attachments/assets/c2c6ab09-8ba7-4986-abbe-e5af2cc0d92c" />
+<img width="960" height="475" alt="image" src="https://github.com/user-attachments/assets/1608763e-da14-4b04-809a-2a1f601689eb" />
+<img width="960" height="475" alt="image" src="https://github.com/user-attachments/assets/a8e49ab2-be0a-4d0e-9024-44efd5cc76e6" />
 
 
 **Interactive charts**
-<img width="960" height="478" alt="image" src="https://github.com/user-attachments/assets/bf649ab9-d9a5-4fd0-bef6-470b853b81e9" />
+<img width="960" height="475" alt="image" src="https://github.com/user-attachments/assets/bf56001b-4610-4c70-a84c-56192c2ee54c" />
+
 
 # 🔮 Future Improvements
 
