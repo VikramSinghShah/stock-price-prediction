@@ -140,6 +140,7 @@ How to deploy ML models in a user‑friendly dashboard
 
 
 **Interactive charts**
+<img width="960" height="478" alt="image" src="https://github.com/user-attachments/assets/bf649ab9-d9a5-4fd0-bef6-470b853b81e9" />
 
 # 🔮 Future Improvements
 
