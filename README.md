@@ -8,8 +8,7 @@ It fetches live financial data from Yahoo Finance, computes technical indicators
 
 # 🚀 Features
 
- # Elegant UI: 
- custom background, translucent cards, styled tables, green/red highlights for gains/losses.
+ **Elegant UI**: custom background, translucent cards, styled tables, green/red highlights for gains/losses.
 
 
 # Single Ticker Prediction:
@@ -65,17 +64,17 @@ Volatility
 
 # 🛠 Tech Stack
 
-Python
+**Python**
 
-Streamlit (UI framework)
+**Streamlit (UI framework)**
 
-yfinance (data fetching)
+**yfinance (data fetching)**
 
-pandas / numpy (data processing)
+**pandas / numpy (data processing)**
 
-scikit‑learn (machine learning)
+**scikit‑learn (machine learning)**
 
-plotly.express (charts)
+**plotly.express (charts)**
 
 
 
@@ -89,28 +88,34 @@ background.jpg → background image for styling
 
 Other files → helper scripts, notebooks, or assets
 
-#⚙️ How to Run
+# ⚙️ How to Run
 
-Clone the repo:
+**Clone the repo**:
 
-bash
+**Bash**
 
 git clone https://github.com/VikramSinghShah/stock-price-prediction.git
+
 cd stock-price-prediction
 
-Install dependencies:
 
-bash
+**Install dependencies**:
+
+**Bash**
 
 pip install -r requirements.txt
 
-Run the app:
 
-bash
+**Run the app**:
+
+**Bash**
 
 streamlit run app.py
 
+
 Open the local URL (usually http://localhost:8501) in your browser.
+
+
 
 # 🎯 Use Case
 
@@ -133,10 +138,8 @@ Interactive charts
 
 # 🔮 Future Improvements
 
-Add more ML models (Random Forest, LSTM, etc.)
+Add more ML models (LSTM, etc.)
 
 Include more technical indicators
-
-Deploy on cloud (Streamlit Cloud, Heroku, etc.)
 
 Add Excel export option with formatting
